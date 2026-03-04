@@ -1,0 +1,45 @@
+#!/usr/bin/env sloth
+
+let imageTag = 'cgit-env'
+let containerName = imageTag
+
+if $argv.length == 0 {
+  $stderr.write("Usage: run.sloth [build | run]\n")
+  exit(42);
+}
+
+let cmd = $argv[0]
+
+func build() {
+  [
+    'docker',
+    'build',
+    '.',
+    '--tag', imageTag,
+  ]!
+}
+
+func run() {
+  [
+    'docker',
+    'container',
+    'run',
+    '-it', # interactive, tty
+    '--rm', # auto-remove when exiting
+    '--name', containerName,
+    '--mount', 'type=bind,src=.,dst=/repo',
+    # host:container
+    '--publish', '8080:80',
+    imageTag,
+  ]!
+}
+
+with($cwd = $scriptDir) {
+  if cmd == 'build' {
+    build()
+  } else if cmd == 'run' {
+    run()
+  } else {
+    throw "Unknown sub-command \"${$argv[0]}\""
+  }
+}
