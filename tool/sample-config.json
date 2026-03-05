@@ -1,0 +1,14 @@
+{
+  "repos": [
+    {
+      "remote": "git@github.com:christopherfujino/finance-platform",
+      "description": "A personal finance platform.",
+      "local": "finance-platform"
+    },
+    {
+      "remote": "git@github.com:christopherfujino/slothscript",
+      "description": "A scripting language for automation and system administration.",
+      "local": "slothscript"
+    }
+  ]
+}
