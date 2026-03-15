@@ -29,6 +29,11 @@
       "remote": "git@github.com:christopherfujino/pea-notes",
       "description": "A pea-sized note-taking webapp.",
       "local": "pea-notes"
+    },
+    {
+      "remote": "git@github.com:christopherfujino/dhb",
+      "description": "Integer calculator language.",
+      "local": "dhb"
     }
   ]
 }
