@@ -34,9 +34,9 @@ function Browser(_) {
     return html`<p>Loading...</p>`;
   } else {
     return html`
-    <ul>
-      ${files.map((file) => html`<li>${file}</li>`)}
-    </ul>`;
+    <table>
+      ${files.map((file) => html`<tr><td>${file}</td></tr>`)}
+    </table>`;
   }
 }
 
