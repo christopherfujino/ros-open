@@ -97,6 +97,7 @@ function Nav() {
   return html`
     <nav aria-label="breadcrumb">
       <ul>
+        <li><a href="/">ros</a></li>
         <li>${editorElement}</li>
         <li>${browserElement}</li>
       </ul>
@@ -111,7 +112,6 @@ function App(_) {
   return html`
     <${Route.Provider} value=${routeTuple}>
     <header class="container-fluid">
-      <strong>Pea Notes</strong>
       <${Nav} />
     </header>
     <main class="container-fluid">
