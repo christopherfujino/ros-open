@@ -12,6 +12,7 @@ function error(msg) {
 
 function Browser(_) {
   const [files, updateFiles] = useState(null);
+  const [__, setRoute] = useContext(Route);
   if (files === null) {
     fetch("/api/notes", {
       headers: { "Content-Type": "application/json" },
@@ -33,34 +34,32 @@ function Browser(_) {
 
     return html`<p>Loading...</p>`;
   } else {
+    const rows = files.map((file) =>
+      html`<tr><td><a href="#" onClick=${(_) => setRoute("/editor" + file)}>${file}</a></td></tr>`);
     return html`
     <table>
-      ${files.map((file) => html`<tr><td>${file}</td></tr>`)}
+      ${rows}
     </table>`;
   }
 }
 
-function Body(props) {
-  const [route, _] = useContext(Route);
+function Editor(props) {
+  const [noteContents, updateNoteContents] = useState(props.note);
+  const [path, updatePath] = useState(props.path);
 
-  switch (route) {
-    case "/editor":
-      const [noteContents, updateNoteContents] = useState(props.note);
-      const [path, updatePath] = useState(props.path);
-
-      function submit() {
-        fetch("/api/notes/update", {
-          method: "UPDATE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: path, contents: noteContents }),
-        }).then(function(res) {
-          if (!res.ok) {
-            // TODO surface this in UI
-            console.error("Bad response:", res);
-          }
-        });
+  function submit() {
+    fetch("/api/notes/update", {
+      method: "UPDATE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: path, contents: noteContents }),
+    }).then(function(res) {
+      if (!res.ok) {
+        // TODO surface this in UI
+        console.error("Bad response:", res);
       }
-      return html`
+    });
+  }
+  return html`
         <form spellcheck=${false}>
           <label>
             Path
@@ -72,27 +71,31 @@ function Body(props) {
           </label>
           <input type="button" value="Save" onClick=${submit} />
         </form>`;
-    case "/browser":
-      return html`<${Browser} />`;
-    default:
-      return html`<h1>Error invalid route <code>${route}</code></h1>`;
+}
+
+function Body(props) {
+  const [route, _] = useContext(Route);
+
+  if (route.startsWith("/editor")) {
+    return Editor(props);
+  } else if (route == "/browser") {
+    return html`<${Browser} />`;
+  } else {
+    return html`<h1>Error invalid route <code>${route}</code></h1>`;
   }
 }
 
 function Nav() {
   const [route, setRoute] = useContext(Route);
   let editorElement, browserElement;
-  switch (route) {
-    case "/editor":
-      editorElement = html`<a class="secondary">Editor</a>`;
-      browserElement = html`<a href="#" onclick=${() => setRoute("/browser")}>Browser</a>`;
-      break;
-    case "/browser":
-      editorElement = html`<a href="#" onclick=${() => setRoute("/editor")}>Editor</a>`;
-      browserElement = html`<a class="secondary">Browser</a>`;
-      break;
-    default:
-      return html`<h1>Error invalid route <code>${route}</code></h1>`;
+  if (route.startsWith("/editor")) {
+    editorElement = html`<a class="secondary">Editor</a>`;
+    browserElement = html`<a href="#" onclick=${() => setRoute("/browser")}>Browser</a>`;
+  } else if (route == "/browser") {
+    editorElement = html`<a href="#" onclick=${() => setRoute("/editor")}>Editor</a>`;
+    browserElement = html`<a class="secondary">Browser</a>`;
+  } else {
+    return html`<h1>Error invalid route <code>${route}</code></h1>`;
   }
   return html`
     <nav aria-label="breadcrumb">
@@ -106,7 +109,7 @@ function Nav() {
 
 // Create your app
 function App(_) {
-  const [route, setRoute] = useState("/editor");
+  const [route, setRoute] = useState("/browser");
   const routeTuple = [route, setRoute];
 
   return html`
