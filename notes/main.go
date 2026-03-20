@@ -34,7 +34,13 @@ func (t tee) Describe() service.Description {
 }
 
 func (t tee) Register() {
-	var fileServer = http.StripPrefix(t.endpointRoot, http.FileServer(http.Dir(filepath.Join(t.dir, "assets"))))
+	// TODO fix this
+	assetsPath, err := filepath.Abs(filepath.Join(".", "notes", "assets"))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("note asset path = %s\n", assetsPath)
+	var fileServer = http.StripPrefix(t.endpointRoot, http.FileServer(http.Dir(assetsPath)))
 	http.Handle(fmt.Sprintf("GET %s/", t.endpointRoot), fileServer)
 
 	http.HandleFunc(fmt.Sprintf("GET /api%s", t.endpointRoot), func(w http.ResponseWriter, r *http.Request) {

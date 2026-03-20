@@ -8,11 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 )
-
-var services = []service.T{
-	notes.Create("./notes", "/notes"),
-}
 
 func parseArgs() string {
 	var fs = flag.String("fs", "", "Path to mutable file store.")
@@ -24,12 +21,34 @@ func parseArgs() string {
 		os.Exit(1)
 	}
 
+	absFs, err := filepath.Abs(*fs)
+	if err != nil {
+		panic(err)
+	}
+
+	*fs = absFs
+
 	return *fs
 }
 
 func main() {
 	var storageRoot = parseArgs()
-	panic(storageRoot)
+
+	var services = (func () []service.T {
+		var paths = []string{
+			"/notes",
+		}
+		var services = []service.T{}
+
+		for _, path := range paths {
+			services = append(services, notes.Create(
+				filepath.Join(storageRoot, path),
+				path,
+			))
+		}
+
+		return services
+	})()
 
 	var descriptions = []service.Description{}
 	for _, service := range services {
