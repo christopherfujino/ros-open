@@ -5,6 +5,7 @@
 set -euo pipefail
 
 ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}" )" )"
+LOCAL_REPOS="${HOME}/repos"
 
 cd "$ROOT"
 

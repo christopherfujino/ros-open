@@ -9,8 +9,16 @@ set -euo pipefail
 #
 #trap fallback_to_shell INT
 
-echo 'About to spawn lighttpd...'
+set +u
+if [ -n "$1" ]; then
+  echo "Overriding to run: ${@:1}"
+  exec ${@:1}
+else
+  set -u
+  echo 'About to spawn lighttpd...'
 
-exec lighttpd -D -f /etc/lighttpd/lighttpd.conf
-#lighttpd -f /etc/lighttpd/lighttpd.conf || (/bin/bash && false)
-#exec /bin/bash
+  exec lighttpd -D -f /etc/lighttpd/lighttpd.conf
+fi
+
+echo 'Unreachable!' 1>&2
+exit 1

@@ -11,8 +11,14 @@ import (
 	"path/filepath"
 )
 
-func parseArgs() string {
+type config struct {
+	fs string
+	port int
+}
+
+func parseArgs() config {
 	var fs = flag.String("fs", "", "Path to mutable file store.")
+	var port = flag.Int("port", 8888, "Port.")
 
 	flag.Parse()
 
@@ -26,13 +32,14 @@ func parseArgs() string {
 		panic(err)
 	}
 
-	*fs = absFs
-
-	return *fs
+	return config{
+		fs: absFs,
+		port: *port,
+	}
 }
 
 func main() {
-	var storageRoot = parseArgs()
+	var c = parseArgs()
 
 	var services = (func () []service.T {
 		var paths = []string{
@@ -42,7 +49,7 @@ func main() {
 
 		for _, path := range paths {
 			services = append(services, notes.Create(
-				filepath.Join(storageRoot, path),
+				filepath.Join(c.fs, path),
 				path,
 			))
 		}
@@ -55,7 +62,6 @@ func main() {
 		service.Register()
 		descriptions = append(descriptions, service.Describe())
 	}
-	fmt.Println("Listening on 127.0.0.1:8080")
 
 	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Debug in GET /: %s\n", r.URL.String())
@@ -67,7 +73,8 @@ func main() {
 		w.Write([]byte("</ul>"))
 	})
 
-	var err = http.ListenAndServe("127.0.0.1:8080", nil)
+	fmt.Printf("Listening on 127.0.0.1:%d\n", c.port)
+	var err = http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", c.port), nil)
 	if err != nil {
 		panic(err)
 	}

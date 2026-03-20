@@ -20,7 +20,15 @@ func build() {
 }
 
 func run() {
-  [
+  let localRepos = Directory("${ $env["HOME"] }/repos")
+  if not localRepos.exists() {
+    localRepos = Directory("${ $cwd }/repos")
+  }
+  if not localRepos.exists() {
+    throw "Could not find a valid repos/ dir in either ~/repos or ./repos"
+  }
+
+  let cmd = [
     'docker',
     'container',
     'run',
@@ -32,7 +40,15 @@ func run() {
     # host:container
     '--publish', '8080:80',
     imageTag,
-  ]!
+  ]
+
+  if $argv.length > 1 {
+    # TODO push all the rest...
+    cmd.push($argv[1])
+    print("Pushing ${ $argv[1] }:\n${ cmd }")
+  }
+
+  cmd!
 }
 
 with($cwd = $scriptDir) {
