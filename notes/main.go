@@ -49,7 +49,6 @@ func (t tee) Register() {
 
 	// GET one
 	http.HandleFunc(fmt.Sprintf("GET /api%s/note/{name...}", t.endpointRoot), func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("[DEBUG] in GET one note: %s\n", r.URL)
 		var fail = func(err error) {
 			w.WriteHeader(500)
 			// TODO sanitize this?
@@ -143,7 +142,6 @@ func (t tee) Register() {
 			return
 		}
 		fs.Write(reqData.Path, reqData.Contents)
-		fmt.Printf("%s: %s\n", reqData.Path, reqData.Contents)
 		w.WriteHeader(200)
 	})
 }

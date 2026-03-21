@@ -36,7 +36,7 @@ func (f FS) ReadFile(relativePath string) ([]byte, error) {
 }
 
 func (f *FS) Write(path string, contents string) {
-	log.Printf("FS.Write(%s, %s)", path, contents)
+	log.Printf("FS.Write(%s, ...)", path)
 	var absPath = filepath.Join(f.root, path)
 	_, err := os.Stat(absPath)
 	if err == nil {
@@ -50,11 +50,9 @@ func (f *FS) Write(path string, contents string) {
 				panic("Uh oh, traversed too far up!")
 			}
 			var parent = filepath.Dir(path)
-			fmt.Printf("[DEBUG] checking %s\n", parent)
 			_, err := os.Stat(parent)
 			if err == nil {
 				// We found it!
-				fmt.Printf("[DEBUG] Found nearest parent!\n")
 				return
 			} else if errors.Is(err, os.ErrNotExist) {
 				findFirstExistingParent(parent)
@@ -62,6 +60,7 @@ func (f *FS) Write(path string, contents string) {
 				if err != nil {
 					panic(err)
 				}
+				log.Printf("Created directory %s\n", parent)
 			}
 		}
 		findFirstExistingParent(absPath)
@@ -71,6 +70,7 @@ func (f *FS) Write(path string, contents string) {
 	if err = os.WriteFile(absPath, []byte(contents), 0600); err != nil {
 		panic(err)
 	}
+	log.Printf("Wrote file %s\n", absPath)
 }
 
 func (f FS) GetAllPaths() ([]string, error) {
