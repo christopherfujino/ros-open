@@ -26,6 +26,15 @@ func Open(root string) (*FS, error) {
 	}, nil
 }
 
+func (f FS) ReadFile(relativePath string) ([]byte, error) {
+	var bytes, err = os.ReadFile(filepath.Join(f.root, relativePath))
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+}
+
 func (f *FS) Write(path string, contents string) {
 	log.Printf("FS.Write(%s, %s)", path, contents)
 	var absPath = filepath.Join(f.root, path)

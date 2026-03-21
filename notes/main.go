@@ -16,6 +16,10 @@ type GetNotesResponse struct {
 	Files []string `json:"files"`
 }
 
+type GetNoteResponse struct {
+	Content string `json:"content"`
+}
+
 type UpdateNotesRequest struct {
 	Path     string `json:"path"`
 	Contents string `json:"contents"`
@@ -43,7 +47,46 @@ func (t tee) Register() {
 	var fileServer = http.StripPrefix(t.endpointRoot, http.FileServer(http.Dir(assetsPath)))
 	http.Handle(fmt.Sprintf("GET %s/", t.endpointRoot), fileServer)
 
-	http.HandleFunc(fmt.Sprintf("GET /api%s", t.endpointRoot), func(w http.ResponseWriter, r *http.Request) {
+	// GET one
+	http.HandleFunc(fmt.Sprintf("GET /api%s/note/{name...}", t.endpointRoot), func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("[DEBUG] in GET one note: %s\n", r.URL)
+		var fail = func(err error) {
+			w.WriteHeader(500)
+			// TODO sanitize this?
+			_, _ = w.Write([]byte(err.Error()))
+			log.Printf("Error: %v", err)
+		}
+
+		// Add back leading backslash
+		var localName = r.PathValue("name")
+		if localName == "" {
+			panic(fmt.Sprintf("Huh?! %s\n", r.URL))
+		}
+		fs, err := Open(t.dir)
+		if err != nil {
+			fail(err)
+			return
+		}
+		bytes, err := fs.ReadFile(localName)
+		if err != nil {
+			fail(err)
+			return
+		}
+		var res = GetNoteResponse{
+			Content: string(bytes),
+		}
+		bytes, err = json.Marshal(res)
+		if err != nil {
+			fail(err)
+			return
+		}
+		_, err = w.Write(bytes)
+		if err != nil {
+			log.Panicf("Failed to write response: %s", err.Error())
+		}
+	})
+	// GET all
+	http.HandleFunc(fmt.Sprintf("GET /api%s/notes", t.endpointRoot), func(w http.ResponseWriter, r *http.Request) {
 		var fail = func(err error) {
 			w.WriteHeader(500)
 			// TODO sanitize this?

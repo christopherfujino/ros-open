@@ -14,7 +14,7 @@ function Browser(_) {
   const [files, updateFiles] = useState(null);
   const [__, setRoute] = useContext(Route);
   if (files === null) {
-    fetch("/api/notes", {
+    fetch("/api/notes/notes", {
       headers: { "Content-Type": "application/json" },
     }).then(function(res) {
       if (!res.ok) {
@@ -25,7 +25,6 @@ function Browser(_) {
           if (res.files == null) {
             console.error("API should not return NULL files!")
           } else {
-            console.log("Got it!", res.files);
             updateFiles(res.files);
           }
         });
@@ -43,11 +42,14 @@ function Browser(_) {
   }
 }
 
-function Editor(props) {
-  const [noteContents, updateNoteContents] = useState(props.note);
-  const [path, updatePath] = useState(props.path);
+function Editor(_) {
+  const [route, __] = useContext(Route);
+  const [noteContents, updateNoteContents] = useState(null);
+  const remotePath = route.match(/^\/editor(.*)$/)[1]
+  const [path, updatePath] = useState(remotePath);
 
   function submit() {
+    // TODO update this
     fetch("/api/notes/update", {
       method: "UPDATE",
       headers: { "Content-Type": "application/json" },
@@ -59,7 +61,25 @@ function Editor(props) {
       }
     });
   }
-  return html`
+  if (noteContents === null) {
+    fetch("/api/notes/note" + remotePath, {headers: {"Content-Type": "application/json"}}).then(function(res) {
+      if (!res.ok) {
+        error(`Bad response: ${res}`);
+      } else {
+        res.json().then((res) => {
+          // TODO validate schema
+          if (res.content === undefined) {
+            error("Malformed response!");
+          }
+          updateNoteContents(res.content);
+        }).catch(function (err) {
+          console.error("caught", err);
+        });
+      }
+    });
+    return html`<p>Loading <code>${remotePath}</code>...</p>`;
+  } else {
+    return html`
         <form spellcheck=${false}>
           <label>
             Path
@@ -71,6 +91,7 @@ function Editor(props) {
           </label>
           <input type="button" value="Save" onClick=${submit} />
         </form>`;
+  }
 }
 
 function Body(props) {
@@ -118,7 +139,7 @@ function App(_) {
       <${Nav} />
     </header>
     <main class="container-fluid">
-      <${Body} note="" path="/foo/bar" />
+      <${Body} />
     </main>
     </${Route.Provider}>
   `;
