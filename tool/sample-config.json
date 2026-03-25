@@ -21,9 +21,9 @@
       "local": "chris-monorepo"
     },
     {
-      "remote": "git@github.com:christopherfujino/cgit-env",
+      "remote": "git@github.com:christopherfujino/ros-open",
       "description": "A container environment for running a cgit server.",
-      "local": "cgit-env"
+      "local": "ros-open"
     },
     {
       "remote": "git@github.com:christopherfujino/pea-notes",

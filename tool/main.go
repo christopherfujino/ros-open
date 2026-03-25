@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,12 +34,20 @@ func Exec(cmdString []string, workingDir string) {
 }
 
 // TODO lift to CLI args
-const (
+var (
 	config string = "./sample-config.json"
 	repos string = "../repos/remote"
 )
 
 func main() {
+	flag.StringVar(&repos, "repos", "", "Path to repos directory")
+	flag.Parse()
+
+	if repos == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	bytes, err := os.ReadFile(config)
 	if err != nil {
 		panic(err)
