@@ -73,8 +73,8 @@ func main() {
 		w.Write([]byte("</ul>"))
 	})
 
-	fmt.Printf("Listening on 127.0.0.1:%d\n", c.port)
-	var err = http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", c.port), nil)
+	fmt.Printf("Listening on 0.0.0.0:%d\n", c.port)
+	var err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", c.port), nil)
 	if err != nil {
 		panic(err)
 	}
