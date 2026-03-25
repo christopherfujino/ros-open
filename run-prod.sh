@@ -5,7 +5,16 @@
 set -euo pipefail
 
 ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}" )" )"
-LOCAL_REPOS="${HOME}/repos"
+
+set +u
+LOCAL_REPOS="$1"
+set -u
+
+if [[ ! -d "${LOCAL_REPOS}" ]]; then
+	echo "No local repos at \"${LOCAL_REPOS}\"" >&2
+	echo "Usage: run-prod.sh [PATH TO REPOS]" >&2
+	exit 1
+fi
 
 cd "$ROOT"
 
@@ -15,6 +24,6 @@ docker container run \
 	--rm \
 	--detach \
 	--name cgit-env \
-	--mount type=bind,src=./repos,dst=/repos \
+	--mount type=bind,src="$LOCAL_REPOS",dst=/repos \
 	--publish 80:80 \
 	cgit-env
