@@ -3,12 +3,14 @@ package notes
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 
+	"christopherfujino.com/ros/ros-open/globals"
 	"christopherfujino.com/ros/ros-open/service"
 )
 
@@ -25,21 +27,22 @@ type UpdateNotesRequest struct {
 	Contents string `json:"contents"`
 }
 
+// TODO make service.T a struct
 type tee struct {
-	dir          string
-	endpointRoot string
+	filestoreRoot string
+	sourceRoot    string
+	endpointRoot  string
 }
 
 func (t tee) Describe() service.Description {
 	return service.Description{
 		Endpoint: t.endpointRoot,
-		Text: "Notes",
+		Text:     "Notes",
 	}
 }
 
 func (t tee) Register() {
-	// TODO fix this
-	assetsPath, err := filepath.Abs(filepath.Join(".", "notes", "assets"))
+	assetsPath, err := filepath.Abs(filepath.Join(t.sourceRoot, "notes", "assets"))
 	if err != nil {
 		panic(err)
 	}
@@ -59,9 +62,11 @@ func (t tee) Register() {
 		// Add back leading backslash
 		var localName = r.PathValue("name")
 		if localName == "" {
-			panic(fmt.Sprintf("Huh?! %s\n", r.URL))
+			var msg = fmt.Sprintf("Parse error, expected a note name trailing in %s\n", r.URL)
+			fail(errors.New(msg))
+			return
 		}
-		fs, err := Open(t.dir)
+		fs, err := Open(t.filestoreRoot)
 		if err != nil {
 			fail(err)
 			return
@@ -91,7 +96,7 @@ func (t tee) Register() {
 			// TODO sanitize this?
 			_, _ = w.Write([]byte(err.Error()))
 		}
-		var fs, err = Open(t.dir)
+		var fs, err = Open(t.filestoreRoot)
 		if err != nil {
 			fail(err)
 			return
@@ -124,7 +129,7 @@ func (t tee) Register() {
 			_, _ = w.Write([]byte(err.Error()))
 		}
 
-		var fs, err = Open(t.dir)
+		var fs, err = Open(t.filestoreRoot)
 		if err != nil {
 			fail(err)
 			return
@@ -146,9 +151,10 @@ func (t tee) Register() {
 	})
 }
 
-func Create(dirPath, endpointRoot string) service.T {
+func Create(g globals.T, endpointPath string) service.T {
 	return tee{
-		dir: dirPath,
-		endpointRoot: endpointRoot,
+		filestoreRoot: filepath.Join(g.FileStoreRoot, endpointPath),
+		endpointRoot:  endpointPath,
+		sourceRoot:    g.RosOpenRoot,
 	}
 }

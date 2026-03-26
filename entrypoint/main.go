@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"christopherfujino.com/ros/ros-open/globals"
 	"christopherfujino.com/ros/ros-open/notes"
 	"christopherfujino.com/ros/ros-open/service"
 
@@ -13,19 +14,26 @@ import (
 	"path/filepath"
 )
 
-type config struct {
-	fs   string
-	port int
-}
-
-func parseArgs() config {
+func parseArgs() globals.T {
 	var fs = flag.String("fs", "", "Path to mutable file store.")
+	var repoRoot = flag.String("src", "", "Path to the root of the ros-open repo.")
 	var port = flag.Int("port", 8888, "Port.")
 
 	flag.Parse()
 
+	var failed = false
+
 	if *fs == "" {
 		flag.CommandLine.Usage()
+		failed = true
+	}
+
+	if *repoRoot == "" {
+		flag.CommandLine.Usage()
+		failed = true
+	}
+
+	if failed {
 		os.Exit(1)
 	}
 
@@ -34,25 +42,31 @@ func parseArgs() config {
 		panic(err)
 	}
 
-	return config{
-		fs:   absFs,
-		port: *port,
+	return globals.T{
+		FileStoreRoot: absFs,
+		Port:          *port,
+		RosOpenRoot:   *repoRoot,
 	}
 }
 
 func main() {
 	var c = parseArgs()
 
+	type tuple struct {
+		endpointPath string
+		registrar    func(globals.T, string) service.T
+	}
+
 	var services = (func() []service.T {
-		var paths = []string{
-			"/notes",
+		var paths = []tuple{
+			tuple{"/notes", notes.Create},
 		}
 		var services = []service.T{}
 
-		for _, path := range paths {
-			services = append(services, notes.Create(
-				filepath.Join(c.fs, path),
-				path,
+		for _, t := range paths {
+			services = append(services, t.registrar(
+				c,
+				t.endpointPath,
 			))
 		}
 
@@ -74,7 +88,7 @@ func main() {
 		w.Write([]byte("</ul>"))
 	})
 
-	var localAddress = fmt.Sprintf("127.0.0.1:%d", c.port)
+	var localAddress = fmt.Sprintf("127.0.0.1:%d", c.Port)
 
 	fmt.Printf("Listening on %s\n", localAddress)
 	var err = http.ListenAndServe(
