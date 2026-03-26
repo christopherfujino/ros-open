@@ -1,5 +1,5 @@
 // useCallback is a helper for memoization
-import { useContext, useState } from 'https://esm.sh/preact/hooks';
+import { useContext, useEffect, useState } from 'https://esm.sh/preact/hooks';
 import { createContext, render } from 'https://esm.sh/preact';
 import { html } from 'https://esm.sh/htm@3.1.1/preact';
 
@@ -22,8 +22,8 @@ function Browser(_) {
         error(`Bad response: ${res}`);
       } else {
         res.json().then((res) => {
-          if (res.files == null) {
-            console.error("API should not return NULL files!")
+          if (res.files == null || res.files == undefined) {
+            error(`API should not return ${res.files} .files!`)
           } else {
             updateFiles(res.files);
           }
@@ -34,7 +34,7 @@ function Browser(_) {
     return html`<p>Loading...</p>`;
   } else {
     const rows = files.map((file) =>
-      html`<tr><td><a href="#" onClick=${(_) => setRoute("/editor" + file)}>${file}</a></td></tr>`);
+      html`<tr><td><a href="#" onClick=${(_) => { setRoute("/editor" + file) }}>${file}</a></td></tr>`);
     return html`
     <table>
       ${rows}
@@ -42,27 +42,37 @@ function Browser(_) {
   }
 }
 
-function Editor(_) {
-  const [route, __] = useContext(Route);
-  const [noteContents, updateNoteContents] = useState(null);
-  const remotePath = route.match(/^\/editor(.*)$/)[1]
-  const [path, updatePath] = useState(remotePath);
 
-  function submit() {
+
+function Editor({ route }) {
+  const remotePath = route.match(/^\/editor(.*)$/)[1]
+  const [state, updateState] = useState(null);
+
+  function updateRemoteNoteContents() {
+    if (state == null) {
+      throw "Unreachable!";
+    }
     // TODO update this
     fetch("/api/notes/update", {
       method: "UPDATE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: path, contents: noteContents }),
+      body: JSON.stringify({
+        path: state.path,
+        contents: state.noteContents,
+      }),
     }).then(function(res) {
       if (!res.ok) {
-        // TODO surface this in UI
-        console.error("Bad response:", res);
+        error("Bad response: " + res);
       }
+
+      // TODO surface in UI
+      console.log("Remote update successful");
     });
   }
-  if (noteContents === null) {
-    fetch("/api/notes/note" + remotePath, {headers: {"Content-Type": "application/json"}}).then(function(res) {
+
+  function fetchNoteContents() {
+    // TODO use a ref to see if a fetch is already in flight
+    fetch("/api/notes/note" + remotePath, { headers: { "Content-Type": "application/json" } }).then(function(res) {
       if (!res.ok) {
         error(`Bad response: ${res}`);
       } else {
@@ -71,25 +81,33 @@ function Editor(_) {
           if (res.content === undefined) {
             error("Malformed response!");
           }
-          updateNoteContents(res.content);
-        }).catch(function (err) {
-          console.error("caught", err);
+          updateState({noteContents: res.content, path: res.path || remotePath});
+        }).catch(function(err) {
+          error("caught: " + err);
         });
       }
     });
+  }
+
+  useEffect(function() {
+    fetchNoteContents();
+  }, [route]);
+
+  if (state === null) {
+    fetchNoteContents();
     return html`<p>Loading <code>${remotePath}</code>...</p>`;
   } else {
     return html`
         <form spellcheck=${false}>
           <label>
             Path
-            <input value=${path} onInput=${(e) => updatePath(e.target.value)} />
+            <input value=${state.path} onInput=${(e) => updateState({path: e.target.value, noteContents: state.noteContents})} />
           </label>
           <label>
             Contents
-            <textarea name="note-entry" onInput=${(e) => updateNoteContents(e.target.value)}>${noteContents}</input>
+            <textarea name="note-entry" onInput=${(e) => updateState({path: state.path, noteContents: e.target.value})}>${state.noteContents}</input>
           </label>
-          <input type="button" value="Save" onClick=${submit} />
+          <input type="button" value="Save" onClick=${updateRemoteNoteContents} />
         </form>`;
   }
 }
@@ -98,7 +116,7 @@ function Body(props) {
   const [route, _] = useContext(Route);
 
   if (route.startsWith("/editor")) {
-    return Editor(props);
+    return Editor({ ...props, "route": route });
   } else if (route == "/browser") {
     return html`<${Browser} />`;
   } else {

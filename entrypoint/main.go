@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"christopherfujino.com/ros/ros-open/notes"
 	"christopherfujino.com/ros/ros-open/service"
 
@@ -12,7 +14,7 @@ import (
 )
 
 type config struct {
-	fs string
+	fs   string
 	port int
 }
 
@@ -33,7 +35,7 @@ func parseArgs() config {
 	}
 
 	return config{
-		fs: absFs,
+		fs:   absFs,
 		port: *port,
 	}
 }
@@ -41,7 +43,7 @@ func parseArgs() config {
 func main() {
 	var c = parseArgs()
 
-	var services = (func () []service.T {
+	var services = (func() []service.T {
 		var paths = []string{
 			"/notes",
 		}
@@ -64,7 +66,6 @@ func main() {
 	}
 
 	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Debug in GET /: %s\n", r.URL.String())
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte("<ul>"))
 		for _, description := range descriptions {
@@ -73,9 +74,22 @@ func main() {
 		w.Write([]byte("</ul>"))
 	})
 
-	fmt.Printf("Listening on 0.0.0.0:%d\n", c.port)
-	var err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", c.port), nil)
+	var localAddress = fmt.Sprintf("127.0.0.1:%d", c.port)
+
+	fmt.Printf("Listening on %s\n", localAddress)
+	var err = http.ListenAndServe(
+		localAddress,
+		loggingMiddleware(http.DefaultServeMux),
+	)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("-> %s %s", r.Method, r.RequestURI)
+		next.ServeHTTP(w, r)
+		log.Printf("<- %s %s", r.Method, r.RequestURI)
+	})
 }

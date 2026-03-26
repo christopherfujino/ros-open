@@ -14,11 +14,11 @@ RUN apt-get update \
   && apt-get clean
 
 # Convenience dev deps
-#RUN apt-get install --no-install-recommends -y \
-#  vim \
-#  man-db \
-#  less \
-#  curl
+RUN apt-get install --no-install-recommends -y \
+  vim \
+  less \
+  procps \
+  curl
 
 COPY ./lighttpd.conf /etc/lighttpd/conf.d/cgit.conf
 COPY ./cgitrc /etc/cgitrc
