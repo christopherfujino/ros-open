@@ -13,10 +13,9 @@ LOCAL_REPOS="$1"
 
 if [[ ! -d "${LOCAL_REPOS}" ]]; then
   if [[ -z "$1" ]]; then
-    echo "You must pass a PATH_TO_REPOS" >&2
-    echo
+    echo -e 'You must pass a PATH_TO_REPOS\n' >&2
   else
-    echo "No local repos at \"${LOCAL_REPOS}\"" >&2
+    echo -e "No local repos at \"${LOCAL_REPOS}\"\n" >&2
     echo
   fi
 	echo "Usage: run-prod.sh PATH_TO_REPOS [DEBUG_OVERRIDE_CMD ...]" >&2
